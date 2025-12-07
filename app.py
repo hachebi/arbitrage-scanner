@@ -1,5 +1,6 @@
 import streamlit as st
-from curl_cffi import requests as cffi_requests # 모든 요청을 이걸로 통일
+import requests
+from curl_cffi import requests as cffi_requests
 import pandas as pd
 import concurrent.futures
 import asyncio
@@ -9,7 +10,6 @@ import os
 import logging
 from datetime import datetime, timedelta
 import time
-import random
 
 # ==========================================
 # ⚙️ 설정 & 환경
@@ -18,8 +18,8 @@ HL_REF_CODE = "HACHEBI"
 EX_REF_CODE = "HACHEBI"     
 BN_REF_CODE = "115177638"
 
-REQUEST_TIMEOUT = 10 # 타임아웃 조금 늘림 (안전성 확보)
-MAX_WORKERS = 30
+REQUEST_TIMEOUT = 5  # 타임아웃 10초 -> 5초로 단축 (빠른 실패 후 재시도)
+MAX_WORKERS = 50     # 워커 수 증가
 CACHE_TTL = 15    
 EDGEX_WS_URL = "wss://quote.edgex.exchange/api/v1/public/ws"
 PAIRS_FILE = "edgex_pairs.json"
@@ -28,6 +28,11 @@ MIN_SPREAD = 0.5
 
 logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger(__name__)
+
+HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
+    "Accept": "application/json"
+}
 
 st.set_page_config(
     page_title="Arbitrage Pro", 
@@ -87,29 +92,33 @@ st.markdown("""
 # 🛠 유틸리티: URL, 심볼, 보정
 # ==========================================
 
-# [중요] 모든 HTTP 요청을 '브라우저인 척' 보냄 (보안 우회)
-def make_request(url, method='GET', **kwargs):
+# [빠른 요청] 일반 Requests (보안벽 낮은 곳용)
+def make_fast_request(url, method='GET', **kwargs):
     try:
         kwargs.setdefault('timeout', REQUEST_TIMEOUT)
-        kwargs.setdefault('impersonate', "chrome110") # 크롬 브라우저 위장
-        
-        if method == 'GET': 
-            response = cffi_requests.get(url, **kwargs)
-        else: 
-            response = cffi_requests.post(url, **kwargs)
-            
-        if response.status_code == 200: 
-            return response
-    except Exception as e:
-        # 에러 발생 시 조용히 넘어감 (로그 남기려면 print(e))
-        pass
+        kwargs.setdefault('headers', HEADERS)
+        if method == 'GET': response = requests.get(url, **kwargs)
+        else: response = requests.post(url, **kwargs)
+        if response.status_code == 200: return response
+    except: pass
+    return None
+
+# [보안 우회] Curl_Cffi (보안벽 높은 곳용)
+def make_secure_request(url, method='GET', **kwargs):
+    try:
+        kwargs.setdefault('timeout', REQUEST_TIMEOUT)
+        kwargs.setdefault('impersonate', "chrome110")
+        if method == 'GET': response = cffi_requests.get(url, **kwargs)
+        else: response = cffi_requests.post(url, **kwargs)
+        if response.status_code == 200: return response
+    except: pass
     return None
 
 def normalize_apy(hourly_rate):
     if hourly_rate is None: return 0.0
     apy = hourly_rate * 24 * 365 * 100
-    if abs(apy) > 5000: apy /= 100 
-    if abs(apy) > 5000: apy /= 100
+    if abs(apy) > 2000: apy /= 100 
+    if abs(apy) > 2000: apy /= 100
     return apy
 
 def calculate_apy_from_hourly(hourly_rate):
@@ -130,13 +139,14 @@ def safe_float(val, default=0.0):
     except: return default
 
 # ==========================================
-# 📡 데이터 수집 함수 (전부 cffi_requests 사용)
+# 📡 데이터 수집 함수 (하이브리드 모드)
 # ==========================================
 
 def get_hyperliquid_data():
+    # HL은 보안벽이 낮음 -> 일반 requests 사용 (속도 UP)
     try:
         url = "https://api.hyperliquid.xyz/info"
-        response = make_request(url, method='POST', json={"type": "metaAndAssetCtxs"})
+        response = make_fast_request(url, method='POST', json={"type": "metaAndAssetCtxs"})
         if not response: return {}
         data = response.json()
         result = {}
@@ -155,9 +165,10 @@ def get_hyperliquid_data():
     except: return {}
 
 def get_extended_data():
+    # EX도 일반 requests로 충분할 때가 많음 (안되면 secure로 변경)
     try:
         url = "https://starknet.app.extended.exchange/api/v1/info/markets"
-        response = make_request(url)
+        response = make_secure_request(url) # EX는 secure 권장
         if not response: return {}
         result = {}
         for item in response.json()['data']:
@@ -175,10 +186,10 @@ def get_extended_data():
     except: return {}
 
 def get_binance_data():
+    # BN은 secure 필수
     try:
-        # 바이낸스도 이제 cffi로 요청해서 차단 방지
-        f_res = make_request("https://fapi.binance.com/fapi/v1/premiumIndex")
-        t_res = make_request("https://fapi.binance.com/fapi/v1/ticker/24hr")
+        f_res = make_secure_request("https://fapi.binance.com/fapi/v1/premiumIndex")
+        t_res = make_secure_request("https://fapi.binance.com/fapi/v1/ticker/24hr")
         
         if not f_res or not t_res: return {}
         
@@ -201,14 +212,12 @@ def get_binance_data():
     except: return {}
 
 def get_omni_data():
+    # VR은 secure 필수
     try:
         url = "https://omni.variational.io/api/metadata/supported_assets"
-        # VR은 헤더가 중요함
-        response = cffi_requests.get(
+        response = make_secure_request(
             url, 
-            impersonate="chrome110",
-            headers={"Origin": "https://omni.variational.io", "Referer": "https://omni.variational.io/markets"},
-            timeout=10
+            headers={"Origin": "https://omni.variational.io", "Referer": "https://omni.variational.io/markets"}
         )
         if response.status_code != 200: return {}
         data = response.json()
@@ -219,7 +228,6 @@ def get_omni_data():
             name = item.get('asset')
             price = safe_float(item.get('price'))
             
-            # VR APY 로직 (이미 연율)
             raw_decimal_apy = safe_float(item.get('funding_rate'))
             apy = raw_decimal_apy * 100 
 
@@ -246,8 +254,8 @@ def get_edgex_pairs_map():
     if not mapping or len(mapping) < 10:
         try:
             url = "https://api.edgex.exchange/api/v1/public/instruments"
-            # EdgeX 리스트 요청도 cffi로 강력하게
-            resp = cffi_requests.get(url, impersonate="chrome110", timeout=5)
+            # EdgeX는 secure
+            resp = make_secure_request(url)
             if resp.status_code == 200:
                 data = resp.json().get('data', [])
                 new_mapping = {}
@@ -285,7 +293,7 @@ def get_edgex_data():
                         await ws.send(json.dumps({"type":"subscribe","channel":f"fundingRate.{cid}"}))
                     await asyncio.sleep(0.1) 
                 
-                end = time.time() + 4.0 
+                end = time.time() + 3.0 # 수집 시간 4s -> 3s 단축
                 while time.time() < end:
                     try:
                         msg = await asyncio.wait_for(ws.recv(), timeout=0.5)
@@ -308,7 +316,6 @@ def get_edgex_data():
             if cid not in id_map: continue
             info = id_map[cid]
             if data['price'] > 0:
-                # [EdgeX] normalize_apy 적용 (안전장치)
                 apy = normalize_apy(data['rate'])
                 res[info['display']] = {
                     'apy': apy,
@@ -320,28 +327,23 @@ def get_edgex_data():
     try: return asyncio.run(fetch())
     except: return {}
 
-# 🚀 [Binance] OI도 cffi로 수집 (차단 방지)
 def fetch_binance_ois_parallel(coins):
     if not coins: return {}
     results = {}
     
-    # 병렬 처리 대신 순차 처리 혹은 배치 처리를 고려해야 하나, 일단 cffi로 개별 요청
-    # cffi는 Session 개념이 requests와 약간 다름. 매번 get 사용하거나 Session 생성
-    # 여기서는 성능을 위해 requests.Session을 쓰되 헤더를 강화하거나,
-    # cffi를 쓰되 워커 수를 줄이는 게 안전함. -> cffi 사용 결정
-    
+    # Binance OI는 cffi로 (보안)
     def get_oi(c):
         try:
-            sym = f"{c}USDT"
             r = cffi_requests.get(
-                f"https://fapi.binance.com/fapi/v1/openInterest?symbol={sym}", 
+                f"https://fapi.binance.com/fapi/v1/openInterest?symbol={c}USDT", 
                 impersonate="chrome110", timeout=2
             )
             if r.status_code == 200: return safe_float(r.json().get('openInterest'))
         except: pass
         return 0.0
 
-    with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as ex:
+    # 워커 수 50개로 늘려서 병렬 처리 가속
+    with concurrent.futures.ThreadPoolExecutor(max_workers=50) as ex:
         futures = {ex.submit(get_oi, c): c for c in coins}
         for future in concurrent.futures.as_completed(futures):
             c = futures[future]
@@ -351,6 +353,7 @@ def fetch_binance_ois_parallel(coins):
 
 @st.cache_data(ttl=CACHE_TTL, show_spinner=False)
 def load_all_data():
+    # 멀티스레드로 각 거래소 데이터 동시에 긁어오기 (가장 빠른 방법)
     with concurrent.futures.ThreadPoolExecutor(max_workers=5) as ex:
         futures = {
             'hyperliquid': ex.submit(get_hyperliquid_data),
@@ -372,7 +375,7 @@ with col_r:
         st.cache_data.clear()
         st.rerun()
 
-with st.spinner("Scanning markets..."):
+with st.spinner("Scanning..."):
     data_map = load_all_data()
 
 with st.sidebar:
@@ -439,9 +442,9 @@ if table_rows:
             elif oi_val > 0: oi_str = f"${oi_val:.0f}"
             else: oi_str = "-"
             
+            style_class = "trade-badge badge-mid"
             if i == 0: style_class = "trade-badge badge-long"
             elif i == len(row['markets']) - 1: style_class = "trade-badge badge-short"
-            else: style_class = "trade-badge badge-mid"
             
             arrow = "<span class='arrow-icon'>›</span>" if i < len(row['markets']) - 1 else ""
             badges_html += f"<a href='{link}' target='_blank' class='{style_class}'><span class='ex-name'>{m['code']}</span><span class='rate-val'>{m['apy']:.0f}%</span><span class='oi-val'>{oi_str}</span></a>{arrow}"
