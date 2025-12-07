@@ -1,0 +1,532 @@
+{
+    "10000001": {
+        "display": "BTC",
+        "url_symbol": "BTC-USDT",
+        "scale": 1
+    },
+    "10000002": {
+        "display": "ETH",
+        "url_symbol": "ETH-USDT",
+        "scale": 1
+    },
+    "10000003": {
+        "display": "SOL",
+        "url_symbol": "SOL-USDT",
+        "scale": 1
+    },
+    "10000012": {
+        "display": "DOGE",
+        "url_symbol": "DOGE-USDT",
+        "scale": 1
+    },
+    "10000023": {
+        "display": "XRP",
+        "url_symbol": "XRP-USDT",
+        "scale": 1
+    },
+    "10000032": {
+        "display": "PEPE",
+        "url_symbol": "1000PEPE-USDT",
+        "scale": 1000
+    },
+    "10000037": {
+        "display": "SUI",
+        "url_symbol": "SUI-USDT",
+        "scale": 1
+    },
+    "10000045": {
+        "display": "APT",
+        "url_symbol": "APT-USDT",
+        "scale": 1
+    },
+    "10000056": {
+        "display": "ARB",
+        "url_symbol": "ARB-USDT",
+        "scale": 1
+    },
+    "10000062": {
+        "display": "OP",
+        "url_symbol": "OP-USDT",
+        "scale": 1
+    },
+    "10000078": {
+        "display": "LTC",
+        "url_symbol": "LTC-USDT",
+        "scale": 1
+    },
+    "10000085": {
+        "display": "LINK",
+        "url_symbol": "LINK-USDT",
+        "scale": 1
+    },
+    "10000088": {
+        "display": "AVAX",
+        "url_symbol": "AVAX-USDT",
+        "scale": 1
+    },
+    "10000089": {
+        "display": "ADA",
+        "url_symbol": "ADA-USDT",
+        "scale": 1
+    },
+    "10000090": {
+        "display": "DOT",
+        "url_symbol": "DOT-USDT",
+        "scale": 1
+    },
+    "10000091": {
+        "display": "TRX",
+        "url_symbol": "TRX-USDT",
+        "scale": 1
+    },
+    "10000092": {
+        "display": "MATIC",
+        "url_symbol": "MATIC-USDT",
+        "scale": 1
+    },
+    "10000093": {
+        "display": "BCH",
+        "url_symbol": "BCH-USDT",
+        "scale": 1
+    },
+    "10000094": {
+        "display": "XLM",
+        "url_symbol": "XLM-USDT",
+        "scale": 1
+    },
+    "10000095": {
+        "display": "UNI",
+        "url_symbol": "UNI-USDT",
+        "scale": 1
+    },
+    "10000100": {
+        "display": "BONK",
+        "url_symbol": "1000BONK-USDT",
+        "scale": 1000
+    },
+    "10000101": {
+        "display": "WIF",
+        "url_symbol": "WIF-USDT",
+        "scale": 1
+    },
+    "10000102": {
+        "display": "FLOKI",
+        "url_symbol": "1000FLOKI-USDT",
+        "scale": 1000
+    },
+    "10000103": {
+        "display": "JTO",
+        "url_symbol": "JTO-USDT",
+        "scale": 1
+    },
+    "10000104": {
+        "display": "WLD",
+        "url_symbol": "WLD-USDT",
+        "scale": 1
+    },
+    "10000105": {
+        "display": "PYTH",
+        "url_symbol": "PYTH-USDT",
+        "scale": 1
+    },
+    "10000106": {
+        "display": "TIA",
+        "url_symbol": "TIA-USDT",
+        "scale": 1
+    },
+    "10000107": {
+        "display": "ORDI",
+        "url_symbol": "ORDI-USDT",
+        "scale": 1
+    },
+    "10000108": {
+        "display": "SEI",
+        "url_symbol": "SEI-USDT",
+        "scale": 1
+    },
+    "10000109": {
+        "display": "INJ",
+        "url_symbol": "INJ-USDT",
+        "scale": 1
+    },
+    "10000110": {
+        "display": "RNDR",
+        "url_symbol": "RNDR-USDT",
+        "scale": 1
+    },
+    "10000111": {
+        "display": "FIL",
+        "url_symbol": "FIL-USDT",
+        "scale": 1
+    },
+    "10000112": {
+        "display": "ATOM",
+        "url_symbol": "ATOM-USDT",
+        "scale": 1
+    },
+    "10000113": {
+        "display": "IMX",
+        "url_symbol": "IMX-USDT",
+        "scale": 1
+    },
+    "10000114": {
+        "display": "NEAR",
+        "url_symbol": "NEAR-USDT",
+        "scale": 1
+    },
+    "10000115": {
+        "display": "STX",
+        "url_symbol": "STX-USDT",
+        "scale": 1
+    },
+    "10000116": {
+        "display": "ETC",
+        "url_symbol": "ETC-USDT",
+        "scale": 1
+    },
+    "10000117": {
+        "display": "VET",
+        "url_symbol": "VET-USDT",
+        "scale": 1
+    },
+    "10000118": {
+        "display": "ICP",
+        "url_symbol": "ICP-USDT",
+        "scale": 1
+    },
+    "10000119": {
+        "display": "LDO",
+        "url_symbol": "LDO-USDT",
+        "scale": 1
+    },
+    "10000120": {
+        "display": "FDUSD",
+        "url_symbol": "FDUSD-USDT",
+        "scale": 1
+    },
+    "10000121": {
+        "display": "USDC",
+        "url_symbol": "USDC-USDT",
+        "scale": 1
+    },
+    "10000122": {
+        "display": "STRK",
+        "url_symbol": "STRK-USDT",
+        "scale": 1
+    },
+    "10000123": {
+        "display": "JUP",
+        "url_symbol": "JUP-USDT",
+        "scale": 1
+    },
+    "10000124": {
+        "display": "DYM",
+        "url_symbol": "DYM-USDT",
+        "scale": 1
+    },
+    "10000125": {
+        "display": "ALT",
+        "url_symbol": "ALT-USDT",
+        "scale": 1
+    },
+    "10000126": {
+        "display": "MANTA",
+        "url_symbol": "MANTA-USDT",
+        "scale": 1
+    },
+    "10000127": {
+        "display": "XAI",
+        "url_symbol": "XAI-USDT",
+        "scale": 1
+    },
+    "10000128": {
+        "display": "BLUR",
+        "url_symbol": "BLUR-USDT",
+        "scale": 1
+    },
+    "10000129": {
+        "display": "ZETA",
+        "url_symbol": "ZETA-USDT",
+        "scale": 1
+    },
+    "10000130": {
+        "display": "MEME",
+        "url_symbol": "MEME-USDT",
+        "scale": 1
+    },
+    "10000131": {
+        "display": "SATS",
+        "url_symbol": "1000SATS-USDT",
+        "scale": 1000000
+    },
+    "10000132": {
+        "display": "RATS",
+        "url_symbol": "1000RATS-USDT",
+        "scale": 1000
+    },
+    "10000134": {
+        "display": "PIXEL",
+        "url_symbol": "PIXEL-USDT",
+        "scale": 1
+    },
+    "10000136": {
+        "display": "PENDLE",
+        "url_symbol": "PENDLE-USDT",
+        "scale": 1
+    },
+    "10000137": {
+        "display": "GMT",
+        "url_symbol": "GMT-USDT",
+        "scale": 1
+    },
+    "10000138": {
+        "display": "AAVE",
+        "url_symbol": "AAVE-USDT",
+        "scale": 1
+    },
+    "10000139": {
+        "display": "SHIB",
+        "url_symbol": "1000SHIB-USDT",
+        "scale": 1000
+    },
+    "10000140": {
+        "display": "TON",
+        "url_symbol": "TON-USDT",
+        "scale": 1
+    },
+    "10000142": {
+        "display": "ETHFI",
+        "url_symbol": "ETHFI-USDT",
+        "scale": 1
+    },
+    "10000143": {
+        "display": "YGG",
+        "url_symbol": "YGG-USDT",
+        "scale": 1
+    },
+    "10000144": {
+        "display": "ENA",
+        "url_symbol": "ENA-USDT",
+        "scale": 1
+    },
+    "10000145": {
+        "display": "W",
+        "url_symbol": "W-USDT",
+        "scale": 1
+    },
+    "10000146": {
+        "display": "FTM",
+        "url_symbol": "FTM-USDT",
+        "scale": 1
+    },
+    "10000148": {
+        "display": "OMNI",
+        "url_symbol": "OMNI-USDT",
+        "scale": 1
+    },
+    "10000149": {
+        "display": "ZK",
+        "url_symbol": "ZK-USDT",
+        "scale": 1
+    },
+    "10000150": {
+        "display": "MERL",
+        "url_symbol": "MERL-USDT",
+        "scale": 1
+    },
+    "10000151": {
+        "display": "REZ",
+        "url_symbol": "REZ-USDT",
+        "scale": 1
+    },
+    "10000152": {
+        "display": "BB",
+        "url_symbol": "BB-USDT",
+        "scale": 1
+    },
+    "10000153": {
+        "display": "IO",
+        "url_symbol": "IO-USDT",
+        "scale": 1
+    },
+    "10000154": {
+        "display": "NOT",
+        "url_symbol": "NOT-USDT",
+        "scale": 1
+    },
+    "10000155": {
+        "display": "CRV",
+        "url_symbol": "CRV-USDT",
+        "scale": 1
+    },
+    "10000156": {
+        "display": "SAND",
+        "url_symbol": "SAND-USDT",
+        "scale": 1
+    },
+    "10000158": {
+        "display": "ZRO",
+        "url_symbol": "ZRO-USDT",
+        "scale": 1
+    },
+    "10000159": {
+        "display": "LISTA",
+        "url_symbol": "LISTA-USDT",
+        "scale": 1
+    },
+    "10000160": {
+        "display": "MEW",
+        "url_symbol": "MEW-USDT",
+        "scale": 1
+    },
+    "10000161": {
+        "display": "ONDO",
+        "url_symbol": "ONDO-USDT",
+        "scale": 1
+    },
+    "10000162": {
+        "display": "JASMY",
+        "url_symbol": "JASMY-USDT",
+        "scale": 1
+    },
+    "10000163": {
+        "display": "GALA",
+        "url_symbol": "GALA-USDT",
+        "scale": 1
+    },
+    "10000164": {
+        "display": "PEOPLE",
+        "url_symbol": "PEOPLE-USDT",
+        "scale": 1
+    },
+    "10000165": {
+        "display": "ENS",
+        "url_symbol": "ENS-USDT",
+        "scale": 1
+    },
+    "10000166": {
+        "display": "AR",
+        "url_symbol": "AR-USDT",
+        "scale": 1
+    },
+    "10000167": {
+        "display": "MKR",
+        "url_symbol": "MKR-USDT",
+        "scale": 1
+    },
+    "10000168": {
+        "display": "STG",
+        "url_symbol": "STG-USDT",
+        "scale": 1
+    },
+    "10000169": {
+        "display": "TAIKO",
+        "url_symbol": "TAIKO-USDT",
+        "scale": 1
+    },
+    "10000170": {
+        "display": "X",
+        "url_symbol": "1000X-USDT",
+        "scale": 1000
+    },
+    "10000171": {
+        "display": "RENDER",
+        "url_symbol": "RENDER-USDT",
+        "scale": 1
+    },
+    "10000172": {
+        "display": "BANANA",
+        "url_symbol": "BANANA-USDT",
+        "scale": 1
+    },
+    "10000173": {
+        "display": "POL",
+        "url_symbol": "POL-USDT",
+        "scale": 1
+    },
+    "10000174": {
+        "display": "BABYDOGE",
+        "url_symbol": "1MBABYDOGE-USDT",
+        "scale": 1000000
+    },
+    "10000175": {
+        "display": "NEIRO",
+        "url_symbol": "NEIRO-USDT",
+        "scale": 1
+    },
+    "10000176": {
+        "display": "TURBO",
+        "url_symbol": "TURBO-USDT",
+        "scale": 1
+    },
+    "10000177": {
+        "display": "CATI",
+        "url_symbol": "1000CATI-USDT",
+        "scale": 1000
+    },
+    "10000178": {
+        "display": "HMSTR",
+        "url_symbol": "HMSTR-USDT",
+        "scale": 1
+    },
+    "10000179": {
+        "display": "EIGEN",
+        "url_symbol": "EIGEN-USDT",
+        "scale": 1
+    },
+    "10000180": {
+        "display": "SCR",
+        "url_symbol": "SCR-USDT",
+        "scale": 1
+    },
+    "10000181": {
+        "display": "BOME",
+        "url_symbol": "BOME-USDT",
+        "scale": 1
+    },
+    "10000182": {
+        "display": "MOODENG",
+        "url_symbol": "MOODENG-USDT",
+        "scale": 1
+    },
+    "10000183": {
+        "display": "MOG",
+        "url_symbol": "1000MOG-USDT",
+        "scale": 1000
+    },
+    "10000184": {
+        "display": "GOAT",
+        "url_symbol": "GOAT-USDT",
+        "scale": 1
+    },
+    "10000185": {
+        "display": "GRASS",
+        "url_symbol": "GRASS-USDT",
+        "scale": 1
+    },
+    "10000186": {
+        "display": "PNUT",
+        "url_symbol": "PNUT-USDT",
+        "scale": 1
+    },
+    "10000187": {
+        "display": "ACT",
+        "url_symbol": "ACT-USDT",
+        "scale": 1
+    },
+    "10000188": {
+        "display": "POPCAT",
+        "url_symbol": "POPCAT-USDT",
+        "scale": 1
+    },
+    "10000189": {
+        "display": "X",
+        "url_symbol": "1000X-USDT",
+        "scale": 1000
+    },
+    "10000190": {
+        "display": "HIPPO",
+        "url_symbol": "HIPPO-USDT",
+        "scale": 1
+    }
+}
