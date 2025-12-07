@@ -1,6 +1,5 @@
 import streamlit as st
-import requests
-from curl_cffi import requests as cffi_requests
+from curl_cffi import requests as cffi_requests # 모든 요청을 이걸로 통일
 import pandas as pd
 import concurrent.futures
 import asyncio
@@ -10,6 +9,7 @@ import os
 import logging
 from datetime import datetime, timedelta
 import time
+import random
 
 # ==========================================
 # ⚙️ 설정 & 환경
@@ -18,7 +18,7 @@ HL_REF_CODE = "HACHEBI"
 EX_REF_CODE = "HACHEBI"     
 BN_REF_CODE = "115177638"
 
-REQUEST_TIMEOUT = 5
+REQUEST_TIMEOUT = 10 # 타임아웃 조금 늘림 (안전성 확보)
 MAX_WORKERS = 30
 CACHE_TTL = 15    
 EDGEX_WS_URL = "wss://quote.edgex.exchange/api/v1/public/ws"
@@ -28,11 +28,6 @@ MIN_SPREAD = 0.5
 
 logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger(__name__)
-
-HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
-    "Accept": "application/json"
-}
 
 st.set_page_config(
     page_title="Arbitrage Pro", 
@@ -89,53 +84,53 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 🛠 유틸리티
+# 🛠 유틸리티: URL, 심볼, 보정
 # ==========================================
 
-# [강력 보정 2.0] 임계값 낮춤 (50000 -> 2000)
-def normalize_apy(hourly_rate):
-    if hourly_rate is None: return 0.0
-    
-    # 1. 일단 정석대로 계산 (Decimal Rate 가정)
-    apy = hourly_rate * 24 * 365 * 100
-    
-    # 2. 2,000%가 넘으면 "단위 오류(x100)"로 간주하고 나눔
-    # (일반적인 코인이 연 2,000% 펀딩비가 나오긴 힘듦)
-    if abs(apy) > 2000:
-        apy /= 100
-        
-    # 3. 그래도 2,000% 넘으면 "BPS 오류(x10000)"였나보다 하고 또 나눔
-    if abs(apy) > 2000:
-        apy /= 100
-        
-    return apy
-
-def safe_float(val, default=0.0):
-    try: return float(val) if val is not None else default
-    except: return default
-
+# [중요] 모든 HTTP 요청을 '브라우저인 척' 보냄 (보안 우회)
 def make_request(url, method='GET', **kwargs):
     try:
         kwargs.setdefault('timeout', REQUEST_TIMEOUT)
-        kwargs.setdefault('headers', HEADERS)
-        if method == 'GET': response = requests.get(url, **kwargs)
-        else: response = requests.post(url, **kwargs)
-        if response.status_code == 200: return response
-    except: pass
+        kwargs.setdefault('impersonate', "chrome110") # 크롬 브라우저 위장
+        
+        if method == 'GET': 
+            response = cffi_requests.get(url, **kwargs)
+        else: 
+            response = cffi_requests.post(url, **kwargs)
+            
+        if response.status_code == 200: 
+            return response
+    except Exception as e:
+        # 에러 발생 시 조용히 넘어감 (로그 남기려면 print(e))
+        pass
     return None
+
+def normalize_apy(hourly_rate):
+    if hourly_rate is None: return 0.0
+    apy = hourly_rate * 24 * 365 * 100
+    if abs(apy) > 5000: apy /= 100 
+    if abs(apy) > 5000: apy /= 100
+    return apy
+
+def calculate_apy_from_hourly(hourly_rate):
+    if hourly_rate is None: return 0.0
+    return hourly_rate * 24 * 365 * 100
 
 def get_market_url(exchange, coin):
     coin = coin.upper()
     if exchange == 'HL': return f"https://app.hyperliquid.xyz/trade/{coin}?ref={HL_REF_CODE}"
     elif exchange == 'EX': return f"https://app.extended.exchange/perp/{coin}-USD?ref={EX_REF_CODE}"
     elif exchange == 'BN': return f"https://www.binance.com/en/futures/{coin}USDT?ref={BN_REF_CODE}"
-    elif exchange == 'EDX': 
-        return f"https://pro.edgex.exchange/trade/{coin}USD"
+    elif exchange == 'EDX': return f"https://pro.edgex.exchange/trade/{coin}USD"
     elif exchange == 'VR': return f"https://omni.variational.io/perpetual/{coin}"
     return "#"
 
+def safe_float(val, default=0.0):
+    try: return float(val) if val is not None else default
+    except: return default
+
 # ==========================================
-# 📡 데이터 수집 함수
+# 📡 데이터 수집 함수 (전부 cffi_requests 사용)
 # ==========================================
 
 def get_hyperliquid_data():
@@ -150,8 +145,7 @@ def get_hyperliquid_data():
             assets = data[1][i]
             price = safe_float(assets.get('midPx'))
             if price > 0:
-                # HL은 검증된 Decimal Rate
-                apy = normalize_apy(safe_float(assets.get('funding')))
+                apy = calculate_apy_from_hourly(safe_float(assets.get('funding')))
                 result[name] = {
                     'apy': apy,
                     'price': price,
@@ -171,7 +165,7 @@ def get_extended_data():
             stats = item.get('marketStats', {})
             price = safe_float(stats.get('markPrice'))
             if price > 0:
-                apy = normalize_apy(safe_float(stats.get('fundingRate')))
+                apy = calculate_apy_from_hourly(safe_float(stats.get('fundingRate')))
                 result[name] = {
                     'apy': apy,
                     'price': price,
@@ -182,9 +176,12 @@ def get_extended_data():
 
 def get_binance_data():
     try:
+        # 바이낸스도 이제 cffi로 요청해서 차단 방지
         f_res = make_request("https://fapi.binance.com/fapi/v1/premiumIndex")
         t_res = make_request("https://fapi.binance.com/fapi/v1/ticker/24hr")
+        
         if not f_res or not t_res: return {}
+        
         tickers = {t['symbol']: t for t in t_res.json()}
         result = {}
         for item in f_res.json():
@@ -194,11 +191,11 @@ def get_binance_data():
                 price = safe_float(ticker.get('lastPrice'))
                 if price > 0:
                     raw_8h = safe_float(item.get('lastFundingRate'))
-                    apy = normalize_apy(raw_8h / 8)
+                    apy = calculate_apy_from_hourly(raw_8h / 8)
                     result[name] = {
                         'apy': apy,
                         'price': price,
-                        'oi': 0.0 
+                        'oi': 0.0 # 별도 수집
                     }
         return result
     except: return {}
@@ -206,8 +203,10 @@ def get_binance_data():
 def get_omni_data():
     try:
         url = "https://omni.variational.io/api/metadata/supported_assets"
+        # VR은 헤더가 중요함
         response = cffi_requests.get(
-            url, impersonate="chrome110",
+            url, 
+            impersonate="chrome110",
             headers={"Origin": "https://omni.variational.io", "Referer": "https://omni.variational.io/markets"},
             timeout=10
         )
@@ -220,16 +219,19 @@ def get_omni_data():
             name = item.get('asset')
             price = safe_float(item.get('price'))
             
-            # VR은 이미 APY Decimal임이 확인됨 (0.02 = 2%)
-            # 따라서 normalize_apy를 쓰지 않고 * 100만 함
-            raw_val = safe_float(item.get('funding_rate'))
-            apy = raw_val * 100
+            # VR APY 로직 (이미 연율)
+            raw_decimal_apy = safe_float(item.get('funding_rate'))
+            apy = raw_decimal_apy * 100 
 
             oi_data = item.get('open_interest', {})
             total_oi = safe_float(oi_data.get('long_open_interest')) + safe_float(oi_data.get('short_open_interest'))
 
             if name and price > 0:
-                result[name] = {'apy': apy, 'price': price, 'oi': total_oi}
+                result[name] = {
+                    'apy': apy, 
+                    'price': price, 
+                    'oi': total_oi
+                }
         return result
     except: return {}
 
@@ -244,6 +246,7 @@ def get_edgex_pairs_map():
     if not mapping or len(mapping) < 10:
         try:
             url = "https://api.edgex.exchange/api/v1/public/instruments"
+            # EdgeX 리스트 요청도 cffi로 강력하게
             resp = cffi_requests.get(url, impersonate="chrome110", timeout=5)
             if resp.status_code == 200:
                 data = resp.json().get('data', [])
@@ -305,7 +308,7 @@ def get_edgex_data():
             if cid not in id_map: continue
             info = id_map[cid]
             if data['price'] > 0:
-                # [EdgeX] normalize_apy 적용 (EIGEN 12,000% -> 120%로 보정)
+                # [EdgeX] normalize_apy 적용 (안전장치)
                 apy = normalize_apy(data['rate'])
                 res[info['display']] = {
                     'apy': apy,
@@ -317,19 +320,27 @@ def get_edgex_data():
     try: return asyncio.run(fetch())
     except: return {}
 
+# 🚀 [Binance] OI도 cffi로 수집 (차단 방지)
 def fetch_binance_ois_parallel(coins):
     if not coins: return {}
     results = {}
-    session = requests.Session()
-    session.headers.update(HEADERS)
+    
+    # 병렬 처리 대신 순차 처리 혹은 배치 처리를 고려해야 하나, 일단 cffi로 개별 요청
+    # cffi는 Session 개념이 requests와 약간 다름. 매번 get 사용하거나 Session 생성
+    # 여기서는 성능을 위해 requests.Session을 쓰되 헤더를 강화하거나,
+    # cffi를 쓰되 워커 수를 줄이는 게 안전함. -> cffi 사용 결정
+    
     def get_oi(c):
         try:
-            # Binance Symbol 규칙 적용
             sym = f"{c}USDT"
-            r = session.get(f"https://fapi.binance.com/fapi/v1/openInterest?symbol={sym}", timeout=2)
+            r = cffi_requests.get(
+                f"https://fapi.binance.com/fapi/v1/openInterest?symbol={sym}", 
+                impersonate="chrome110", timeout=2
+            )
             if r.status_code == 200: return safe_float(r.json().get('openInterest'))
         except: pass
         return 0.0
+
     with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as ex:
         futures = {ex.submit(get_oi, c): c for c in coins}
         for future in concurrent.futures.as_completed(futures):
@@ -350,6 +361,10 @@ def load_all_data():
         }
         return {k: f.result() for k, f in futures.items()}
 
+# ==========================================
+# 📊 화면 렌더링
+# ==========================================
+
 col_t, col_r = st.columns([8, 1])
 with col_t: st.markdown("### ✨ Arbitrage Scanner")
 with col_r:
@@ -357,7 +372,7 @@ with col_r:
         st.cache_data.clear()
         st.rerun()
 
-with st.spinner("Scanning..."):
+with st.spinner("Scanning markets..."):
     data_map = load_all_data()
 
 with st.sidebar:
@@ -388,7 +403,6 @@ for c in all_coins:
             d = data_map[ex_key][c]
             oi = bn_ois_qty.get(c, 0) * d['price'] if ex_key == 'binance' else d.get('oi', 0)
             url_sym = d.get('url_symbol', None)
-            
             markets.append({'code': code, 'apy': d['apy'], 'price': d['price'], 'oi': oi, 'ex_key': ex_key, 'url_symbol': url_sym})
     
     if len(markets) >= 2:
@@ -418,14 +432,16 @@ if table_rows:
         badges_html = "<div class='market-row'>"
         for i, m in enumerate(row['markets']):
             link = get_market_url(m['code'], row['coin'])
+            
             oi_val = m['oi']
             if oi_val >= 1e6: oi_str = f"${oi_val/1e6:.1f}M"
             elif oi_val >= 1e3: oi_str = f"${oi_val/1e3:.0f}K"
-            else: oi_str = f"${oi_val:.0f}"
+            elif oi_val > 0: oi_str = f"${oi_val:.0f}"
+            else: oi_str = "-"
             
-            style_class = "trade-badge badge-mid"
             if i == 0: style_class = "trade-badge badge-long"
             elif i == len(row['markets']) - 1: style_class = "trade-badge badge-short"
+            else: style_class = "trade-badge badge-mid"
             
             arrow = "<span class='arrow-icon'>›</span>" if i < len(row['markets']) - 1 else ""
             badges_html += f"<a href='{link}' target='_blank' class='{style_class}'><span class='ex-name'>{m['code']}</span><span class='rate-val'>{m['apy']:.0f}%</span><span class='oi-val'>{oi_str}</span></a>{arrow}"
